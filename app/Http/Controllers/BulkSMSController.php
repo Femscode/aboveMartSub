@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Transaction;
 use Illuminate\Support\Str;
 use App\Models\ContactGroup;
 use Illuminate\Http\Request;
@@ -15,19 +16,49 @@ class BulkSMSController extends Controller
     //
     public function index()
     {
+        // return the default page
         $data['user'] = $user = Auth::user();
         $data['contacts'] = ContactGroup::where('user_id', $user->id)->latest()->get();
         return view('bulksms.index', $data);
     }
     public function contactGroup()
     {
+        // return the contact group page
         $data['user'] = $user = Auth::user();
         $data['contacts'] = ContactGroup::where('user_id', $user->id)->latest()->get();
         return view('bulksms.contact_group', $data);
     }
+    public function viewGroup($id)
+    {
+        // return the contact group page
+        $data['user'] = $user = Auth::user();
+        $data['contact'] = $contact = ContactGroup::find($id);
+        if ($contact->type == 'import') {
+            $data['contacts'] = implode(',', unserialize($contact->contacts));
+        } else {
+            $data['contacts'] = $contact->contacts;
+        }
+        return view('bulksms.view_group', $data);
+    }
+    public function viewDetails($id)
+    {
+        // return the contact group page
+        $data['user'] = $user = Auth::user();
+        $data['transaction'] = $contact = Transaction::find($id);
+      
+        return view('bulksms.view_details', $data);
+    }
+    public function transactions()
+    {
+        // rethr the transactions page
+        $data['user'] = $user = Auth::user();
+        $data['transactions'] = Transaction::where('user_id', $user->id)->latest()->get();
+        return view('bulksms.transactions', $data);
+    }
 
     public function saveContacts(Request $rq)
     {
+        // function to save contacts for future SMS transactions
         try {
             $user = Auth::user();
 
@@ -38,7 +69,9 @@ class BulkSMSController extends Controller
             ]);
 
             $data = $rq->all();
+            // dd($data);
             $data['user_id'] = $user->id;
+            // for imported contacts through excel and csv.
             if ($rq->has('import_file')) {
                 $contacts =  Excel::toArray(new ContactImport($user->id, $rq->sender_name, $rq->message),  $rq->import_file)[0];
                 $contact = [];
@@ -63,15 +96,19 @@ class BulkSMSController extends Controller
                     'name' => $data['name'],
                     'description' => $data['description'],
                     'name' => $data['name'],
-                    'contacts' => $data['contacts']
+                    'contacts' => $data['contacts'],
+                    'type' => 'import',
                 ]);
             } else {
+                //for manually typed contacts.
                 ContactGroup::create([
                     'user_id' => $user->id,
                     'name' => $data['name'],
                     'description' => $data['description'],
                     'name' => $data['name'],
-                    'contacts' => $data['contacts']
+                    'contacts' => $data['contacts'],
+                    'type' => 'manual'
+
                 ]);
                 // ContactGroup::create($data);
             }
@@ -81,12 +118,11 @@ class BulkSMSController extends Controller
 
             return redirect()->back()->with('error', $e->getMessage());
         }
-
-
-        dd($rq->all());
     }
 
-    public function deleteGroup($id) {
+    public function deleteGroup($id)
+    {
+        // function to delete created contact group.
         $contact = ContactGroup::find($id);
         $contact->delete();
         return redirect()->back()->with("message", "Contact group deleted succcesfully!");
@@ -95,86 +131,320 @@ class BulkSMSController extends Controller
 
     public function submitSMSForm(Request $rq)
     {
+        // dd($rq->all());
+        //function to get the details of the SMS about to send
         $this->validate($rq, [
             'sender_name' => 'required',
             'contact_type' => 'required',
             'message' => 'required',
-            'message_type' => 'required'
+            'message_type' => 'required',
+
         ]);
+        // dd($rq->all());
         $user = Auth::user();
+        // dd($rq->all());
         if ($rq->contact_type == 'import_file') {
             $contacts =  Excel::toArray(new ContactImport($user->id, $rq->sender_name, $rq->message),  $rq->import_file)[0];
             $contact = [];
-
+            $contact_count = 0;
             foreach ($contacts as $subContact) {
                 foreach ($subContact as $value) {
                     if (Str::length($value) == 10) {
                         $value = "0" . $value;
                         $contact[] = $value;
+                        $contact_count += 1;
                     } elseif (Str::length($value) == 11 || Str::length($value) == 13 || Str::length($value) == 14) {
                         $contact[] = $value;
+                        $contact_count += 1;
                     } else {
                         $value = null;
                     }
                 }
             }
-            $formatted_contacts = Str::replace(["[", "]", "", '"', ' '], '', $contact);
-            // dd($rq->all(), $contacts, $contact, $formatted_contacts);
+            $unique_contact = array_unique($contact);
+            $formatted_contacts = implode(',', $unique_contact);
         } elseif ($rq->contact_type == 'select_group') {
-            $contacts = ContactGroup::find($rq->selected_group)->contacts;
-            $contact_array = [];
-            $unser_contacts = unserialize($contacts);
-            $formatted_contacts = implode(',', $unser_contacts);
+            $contact = ContactGroup::find($rq->selected_group);
+            if ($contact->type == 'manual') {
+                $rq_contacts = $contact->contacts;
+                $contacts = explode(',', $rq_contacts);
+                // dd($contacts);
+                $r_contacts = [];
+                $contact_count = 0;
+                foreach ($contacts as $value) {
 
-          
-            // dd($rq->all(), $formatted_contacts);
+                    if (Str::length($value) == 10) {
+                        $value = "0" . $value;
+                        $r_contacts[] = $value;
+                        $contact_count += 1;
+                    } elseif (Str::length($value) == 11 || Str::length($value) == 13 || Str::length($value) == 14) {
+                        $r_contacts[] = $value;
+                        $contact_count += 1;
+                    } else {
+                        $value = null;
+                    }
+                }
+                $unique_contact = array_unique($r_contacts);
+                $formatted_contacts = implode(',', $unique_contact);
+            } else {
+                $contacts = unserialize($contact->contacts);
+
+                $contact = [];
+                $contact_count = 0;
+                foreach ($contacts as $value) {
+
+                    if (Str::length($value) == 10) {
+                        $value = "0" . $value;
+                        $contact[] = $value;
+                        $contact_count += 1;
+                    } elseif (Str::length($value) == 11 || Str::length($value) == 13 || Str::length($value) == 14) {
+                        $contact[] = $value;
+                        $contact_count += 1;
+                    } else {
+                        $value = null;
+                    }
+                }
+                
+                $unique_contact = array_unique($contact);
+                $formatted_contacts = implode(',', $unique_contact);
+            }
         } else {
-            $contacts = $rq->manual_contact;
-            $formatted_contacts = Str::replace(["[", "]", "", '"', ' '], '', $contacts);
-            // dd($rq->all(), $contacts, $formatted_contacts);
+            $rq_contacts = $rq->contact_field;
+            $contacts = explode(',', $rq_contacts);
+            // dd($contacts);
+            $r_contacts = [];
+            $contact_count = 0;
+            foreach ($contacts as $value) {
+
+                if (Str::length($value) == 10) {
+                    $value = "0" . $value;
+                    $r_contacts[] = $value;
+                    $contact_count += 1;
+                } elseif (Str::length($value) == 11 || Str::length($value) == 13 || Str::length($value) == 14) {
+                    $r_contacts[] = $value;
+                    $contact_count += 1;
+                } else {
+                    $value = null;
+                }
+            }
+            $unique_contact = array_unique($r_contacts);
+            $formatted_contacts = implode(',', $unique_contact);
         }
-        $token = $this->getAuth();
-        $the_work = $this->sendSMS($token,$rq->sender_name, $formatted_contacts,$rq->message);
-        dd($the_work);
-        //check if you get a success response and create a transaction model to save the transaction details.
-    }
- 
-    public function getAuth()
-    {
+        //calculate the charge before sending as a second validation for the amount to be charged, 160 words per page and get the total numnber of recipients.
 
-        $curl = curl_init();
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => 'https://smsurway.com.ng/api/login',
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => '',
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 0,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_POSTFIELDS => 'email=' . 'fasanyafemi@gmail.com' . '&password=' . '3PWrDX2UwvJdxDX', // Corrected concatenation
-            CURLOPT_HTTPHEADER => array(
-                'Content-Type: application/x-www-form-urlencoded'
-            ),
-        ));
-        $response = curl_exec($curl);
-        curl_close($curl);
-        echo $response;
-        dd($response);
-        return $response;
+        //check the user balance 
+        $message_count  = intval(Str::length($rq->message) / 160);
+        if ($message_count == 0) {
+            $message_count = 1;
+        }
+
+
+
+        $real_amount = number_format(3.95 * intval($contact_count) * $message_count, 2); //3.95 should be changed to the admin specified amount.
+        // dd($real_amount,$contact_count, $rq->all());
+        if ($user->balance < $real_amount) {
+            $response = [
+                'success' => false,
+                'message' => 'Insufficient Funds!',
+
+            ];
+
+            return response()->json($response);
+        }
+        $count_recipient = count(explode(',', $formatted_contacts));
+        // dd(count($count_recipient));
+        $response = [
+            'success' => true,
+            'message' => 'Details Fetched!',
+            'sms' => $rq->message,
+            'contacts' => $formatted_contacts,
+            'amount' => $real_amount,
+            'message_type' => $rq->message_type,
+            'sender_name' => $rq->sender_name,
+            'count_recipient' => $count_recipient
+        ];
+
+        if ($rq->schedule_date) {
+            $response['schedule'] = $rq->schedule_date . ' ' . $rq->schedule_time;
+        }
+
+        // Now $response contains all the common data, and you conditionally add 'schedule_date' if needed.
+
+
+        return response()->json($response);
     }
 
-    public function sendSMS($token,$sender_name,$contacts,$msg)
+
+
+    public function sendSMS2(Request $rq)
     {
-        $url = 'https:// smsurway.com.ng/api/send/';
-        $ch = curl_init(); //initialize curl handle
-        curl_setopt($ch, CURLOPT_URL, $url); //set the url
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query(["token" => $token, "from" => $sender_name, "to" => $contacts, "msg" => $msg])); //set the POST variables
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); //return as a variable
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/xwww-form-urlencoded'));
-        curl_setopt($ch, CURLOPT_POST, 1); //set POST method
-        $response = curl_exec($ch);
-        curl_close($ch);
-        return $response;
+        // dd($rq->all());
+        $username = env('SMS_USERNAME');
+        $password = env('SMS_PASSWORD');
+        $sender = $rq->sender_name;
+        $recipient = $rq->contacts;
+        $message = $rq->message;
+        $amount = $rq->amount;
+        $message_type = $rq->message_type;
+
+        // THE API URL with parameters
+        if ($rq->schedule) {
+            $schedule = $rq->schedule;
+            // $apiUrl = "http://www.estoresms.com/smsapi.php?username=$username&password=$password&sender=$sender&recipient=$recipient&message=$message&dnd=true";
+            $apiUrl = "http://www.estoresms.com/smsapi.php?username=$username&password=$password&sender=$sender&recipient=$recipient&message=$message&schedule=$schedule";
+        } else {
+            $apiUrl = "http://www.estoresms.com/smsapi.php?username=$username&password=$password&sender=$sender&recipient=$recipient&message=$message";
+        }
+
+        try {
+            $response = Http::get($apiUrl);
+            $statusCode = $response->status();
+            $responseData = $response->body();
+            $responseCode = abs($response->json());
+            //try and save all the response in txt file for references.
+            file_put_contents(__DIR__ . '/smslog.txt', json_encode($responseData, JSON_PRETTY_PRINT), FILE_APPEND);
+
+            // dd($response, $statusCode,  $responseData, $responseCode);
+
+
+            if ($statusCode == 200 && $responseCode == 0) {
+                if ($rq->schedule) {
+                    $title = 'Successful Scheduled Bulk SMS';
+                    $details = 'Scheduled Bulk SMS to be sent to ' . $recipient . ' by '.$rq->schedule. ', Amount: NGN' . $amount . '. Message: ' . $message;
+                } else {
+                    $title = 'Successful Instant Bulk SMS';
+                    $details = 'Bulk SMS sent to ' . $recipient . ', Amount: NGN' . $amount . '. Message: ' . $message;
+                }
+                //save the record for succesfully sent SMS
+                $this->create_transaction($title, $details, $sender, $message, $recipient, $amount, 1, $statusCode, null, $message_type);
+                $response = [
+                    'success' => true,
+                    'message' => 'Sent Successfully!',
+
+
+                ];
+                return response()->json($response);
+            } else {
+                $statusCode = 0;
+                $title = "Failed Bulk SMS";
+                $details = 'Failed Bulk SMS, recipient: ' . $recipient . ' Amount: NGN0.00, Message: ' . $message;
+                //save the record for non successfully sent SMS due to error from the API
+                $this->create_transaction($title, $details, $sender, $message, $recipient, 0, 0, $statusCode, null, $message_type);
+                $response = [
+                    'success' => false,
+                    'message' => 'Unable to send SMS, Try again later!',
+
+
+                ];
+                return response()->json($response);
+            }
+        } catch (\Exception $e) {
+            $statusCode = 0;
+            // Handle any exceptions or errors here
+            $title = "Failed Bulk SMS";
+            $details = 'Failed Bulk SMS, recipient: ' . $recipient . ' Amount: NGN0.00, Message: ' . $message;
+            // Save the record for non successully sent SMS due to an internal error from the application.
+            $this->create_transaction($title, $details, $sender, $message, $recipient, 0, 0, $statusCode, null, $message_type);
+
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+
+
+            ];
+            return response()->json($response);
+        }
+    }
+
+    public function resendSMS($id)
+    {
+        $tranx = Transaction::find($id);
+        // dd($tranx);
+        $the_work = $this->sendSMS($tranx->sender, $tranx->recipient, $tranx->message, $tranx->amount, $tranx->message_type);
+
+        if ($the_work == true) {
+            //sms sent successfully
+            return redirect()->back()->with('message', 'Bulk SMS sent successfully!');
+        } elseif ($the_work == false) {
+            //sms not sent due to an error encountered from the API
+            return redirect()->back()->with('error', 'Error encountered while sending SMS!');
+        } else {
+            // INTERNAL ERROR FROM ME
+            dd($the_work);
+        }
+    }
+
+
+    public function sendSMS($sender_name, $contacts, $msg, $amount, $message_type)
+    {
+        //the username and the password should be loaded with .env('') before pushing;
+        $username = 'mencorp_edited';
+        $password = 'Thewebadmin247';
+        $sender = $sender_name;
+        $recipient = $contacts;
+        $message = $msg;
+
+        // THE API URL with parameters
+        $apiUrl = "http://www.estoresms.com/smsapi.php?username=$username&password=$password&sender=$sender&recipient=$recipient&message=$message&dnd=true";
+
+        try {
+            $response = Http::get($apiUrl);
+
+            $statusCode = $response->status();
+            $responseData = $response->body();
+            $responseCode = abs($response->json());
+            //try and save all the response in txt file for references.
+            file_put_contents(__DIR__ . '/smslog.txt', json_encode($responseData, JSON_PRETTY_PRINT), FILE_APPEND);
+
+            // dd($response, $statusCode,  $responseData, $responseCode);
+
+
+            if ($statusCode == 200 && $responseCode == 0) {
+                $title = 'Successful Bulk SMS';
+                $details = 'Bulk SMS sent to ' . $recipient . ', Amount: NGN' . $amount . '. Message: ' . $message;
+                //save the record for succesfully sent SMS
+                $this->create_transaction($title, $details, $sender, $message, $recipient, $amount, 1, $statusCode, null, $message_type);
+                return true;
+            } else {
+                $title = "Failed Bulk SMS";
+                $details = 'Failed Bulk SMS, recipient: ' . $recipient . ' Amount: NGN0.00, Message: ' . $message;
+                //save the record for non successfully sent SMS due to error from the API
+                $this->create_transaction($title, $details, $sender, $message, $recipient, 0, 0, $statusCode, null, $message_type);
+                return false;
+            }
+        } catch (\Exception $e) {
+            // Handle any exceptions or errors here
+            $title = "Failed Bulk SMS";
+            $details = 'Failed Bulk SMS, recipient: ' . $recipient . ' Amount: NGN0.00, Message: ' . $message;
+            // Save the record for non successully sent SMS due to an internal error from the application.
+            $this->create_transaction($title, $details, $sender, $message, $recipient, 0, 0, $statusCode, null, $message_type);
+
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+    public function create_transaction($title, $details, $sender, $message, $recipient, $amount, $status, $statusCode, $schedule, $message_type)
+    {
+        $user = Auth::user();
+        //create the transaction
+        $tranx =  Transaction::create([
+            'user_id' => $user->id,
+            'title' => $title,
+            'description' => $details,
+            'sender' => $sender,
+            'message' => $message,
+            'recipient' => $recipient,
+            'amount' => $amount,
+            'status' => $status,
+            'status_code' => $statusCode,
+            'scheduled_for' => $schedule,
+            'before' => $user->balance,
+            'message_type' => $message_type
+
+        ]);
+        //charging the user
+        $user->balance -= $amount;
+        $user->save();
+        $tranx->after = $user->balance;
+        $tranx->save();
     }
 }

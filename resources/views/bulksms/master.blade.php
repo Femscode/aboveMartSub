@@ -4,22 +4,23 @@
 <head>
     <title>Above Mart Bulk SMS</title>
     <meta charset="UTF-8">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!--===============================================================================================-->
     <link rel="icon" type="image/png" href="images/icons/favicon.ico" />
     <!--===============================================================================================-->
-    <link rel="stylesheet" type="text/css" href="bulkasset/vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="{{ asset('bulkasset/vendor/bootstrap/css/bootstrap.min.css')}}">
     <!--===============================================================================================-->
-    <link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="{{ asset('fonts/font-awesome-4.7.0/css/font-awesome.min.css')}}">
     <!--===============================================================================================-->
-    <link rel="stylesheet" type="text/css" href="bulkasset/vendor/animate/animate.css">
+    <link rel="stylesheet" type="text/css" href="{{ asset('bulkasset/vendor/animate/animate.css')}}">
     <!--===============================================================================================-->
-    <link rel="stylesheet" type="text/css" href="bulkasset/vendor/css-hamburgers/hamburgers.min.css">
+    <link rel="stylesheet" type="text/css" href="{{ asset('bulkasset/vendor/css-hamburgers/hamburgers.min.css')}}">
     <!--===============================================================================================-->
-    <link rel="stylesheet" type="text/css" href="bulkasset/vendor/select2/select2.min.css">
+    <link rel="stylesheet" type="text/css" href="{{ asset('bulkasset/vendor/select2/select2.min.css')}}">
     <!--===============================================================================================-->
-    <link rel="stylesheet" type="text/css" href="bulkasset/css/util.css">
-    <link rel="stylesheet" type="text/css" href="bulkasset/css/main.css">
+    <link rel="stylesheet" type="text/css" href="{{ asset('bulkasset/css/util.css')}}">
+    <link rel="stylesheet" type="text/css" href="{{ asset('bulkasset/css/main.css')}}">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -49,8 +50,9 @@
                     <li class="nav-item">
                         <a class="nav-link" href="/contact_group">Contact Groups</a>
                     </li>
-
-
+                    <li class="nav-item">
+                        <a class="nav-link" href="/transactions">Transactions</a>
+                    </li>
                 </ul>
             </div>
         </nav>
@@ -103,14 +105,14 @@
     </style>
 
     <!--===============================================================================================-->
-    <script src="bulkasset/vendor/jquery/jquery-3.2.1.min.js"></script>
+    <script src="{{ asset('bulkasset/vendor/jquery/jquery-3.2.1.min.js')}}"></script>
     <!--===============================================================================================-->
-    <script src="bulkasset/vendor/bootstrap/js/popper.js"></script>
-    <script src="bulkasset/vendor/bootstrap/js/bootstrap.min.js"></script>
+    <script src="{{ asset('bulkasset/vendor/bootstrap/js/popper.js')}}"></script>
+    <script src="{{ asset('bulkasset/vendor/bootstrap/js/bootstrap.min.js')}}"></script>
     <!--===============================================================================================-->
-    <script src="bulkasset/vendor/select2/select2.min.js"></script>
+    <script src="{{ asset('bulkasset/vendor/select2/select2.min.js')}}"></script>
     <!--===============================================================================================-->
-    <script src="bulkasset/vendor/tilt/tilt.jquery.min.js"></script>
+    <script src="{{ asset('bulkasset/vendor/tilt/tilt.jquery.min.js')}}"></script>
     <script>
         $('.js-tilt').tilt({
 			scale: 1.1
@@ -141,6 +143,14 @@
            
         @endif
 
+        @if (session('success'))
+                Swal.fire({
+                        icon: 'success',
+                        title: '{{ session("message") }}'
+                        }) 
+           
+        @endif
+
         @if (session('error'))
                 Swal.fire({
                         icon: 'error',
@@ -149,47 +159,91 @@
            
         @endif
 
-        $('#contact_field').on('input', function() {
-            var inputValue = $(this).val();
+        // $('#contact_field').on('input', function() {
+        //     var inputValue = $(this).val();
         
-            // Remove non-numeric characters except commas
-            inputValue = inputValue.replace(/[^0-9,]/g, '');
+        //     // Remove non-numeric characters except commas
+        //     inputValue = inputValue.replace(/[^0-9,]/g, '');
 
-            // Update the input value
-            $(this).val(inputValue);
+        //     // Update the input value
+        //     $(this).val(inputValue);
+          
 
-            // Check for a comma and create a new div if found
-            if (inputValue.includes(',')) {
-                console.log(inputValue.length)
-                if(inputValue.length == 11) {
-                    inputValue = "0"+inputValue
-                } else if( inputValue.length == 12 ||inputValue.length == 14 || inputValue.length == 15 ||inputValue.length > 25) {inputValue}
-                else { inputValue = ''}
-                var numbers = inputValue.split(',');
-                console.log(inputValue,numbers)
-            
-            
-                // Clear the input field
-                $(this).val('');
+        //     // Check for a comma and create a new div if found
+        //     if (inputValue.includes(',')) {
+        //         console.log(inputValue.length)
+        //         if(inputValue.length == 11) {
+        //             inputValue = "0"+inputValue
+        //         } else if( inputValue.length == 12 ||inputValue.length == 14 || inputValue.length == 15 ||inputValue.length > 25) {inputValue}
+        //         else { inputValue = ''}
+        //         var numbers = inputValue.split(',');               
+        //         console.log(inputValue,numbers)            
+        //         // Clear the input field.
+        //         // $(this).val('');
+        //         // Create a new div for each number
+        //         for (var i = 0; i < numbers.length; i++) {
+        //             var number = numbers[i];
+        //             if (number !== '') {
+        //                var in_no = parseInt($("#no_of_recipients").text())
+        //                 $("#no_of_recipients").text(in_no + 1)
+        //             }
+        //         }
+        //     }
+        //     // updateHiddenInput();
+        // }); 
 
-                // Create a new div for each number
-                for (var i = 0; i < numbers.length; i++) {
-                    var number = numbers[i];
-                    if (number !== '') {
-                        var newDiv = $('<div class="appended-number">' + number + ' <span class="remove-number">X</span></div>');
 
-                        // Append the new div to the output container
-                        $('#output-container').append(newDiv);
-                    }
-                }
-            }
-            updateHiddenInput();
-        });
+  $('#contact_field').on('input', function(e) {
+    // Get the input value
+    var page = parseInt($("#pages").text())
+  var recipient = parseInt($("#no_of_recipients").text())
+  console.log(page, recipient, 'coole')
+  //charge is the amount set by the admin to be charged per each transactions
+  var charge = 4
+  $("#amount_field").val(page * recipient * charge )
+  $("#amount").text(page * recipient * charge)
+  
+  
+// Update the input value with the filtered input
 
-        $('#output-container').on('click', '.remove-number', function() {
-            $(this).parent().remove();
-            updateHiddenInput();
-        });
+    //start copy
+    let inputText = e.target.value;
+    // var inputText = $(this).val();
+
+    // Remove all characters that are not numbers, spaces, or commas
+    inputText = inputText.replace(/[^0-9,\n ]/g, ''); // Allow numbers, commas, spaces, and line breaks
+
+    // Replace line breaks and spaces with commas
+    inputText = inputText.replace(/[\n ]+/g, ',');
+
+    // Remove consecutive commas
+    inputText = inputText.replace(/,+/g, ',');
+
+    // Remove leading/trailing commas
+    // inputText = inputText.replace(/^,|,$/g, '');
+
+    // Update the input value with the modified text
+    e.target.value = inputText;
+
+    // Split the input by commas
+    var phoneNumbers = inputText.split(',');
+
+    // Remove any leading/trailing whitespace from each phone number
+    phoneNumbers = phoneNumbers.map(function(number) {
+      return number.trim();
+    });
+
+    // Filter out any empty strings
+    phoneNumbers = phoneNumbers.filter(function(number) {
+      return number !== "";
+    });
+
+    // Update the count
+    $("#no_of_recipients").text(phoneNumbers.length);
+    //end copy
+
+  });
+
 
     
         // Function to sanitize input and allow only numbers and commas
@@ -201,7 +255,7 @@
     </script>
 
     <!--===============================================================================================-->
-    <script src="bulkasset/js/main.js"></script>
+    <script src="{{ asset('bulkasset/js/main.js')}}"></script>
     @yield('script')
 </body>
 

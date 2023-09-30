@@ -9,10 +9,8 @@
     </div>
 
     <span class="contact1-form-title">
-        Create Contact Groups
-        <a data-toggle="modal" data-target="#exampleModal" class='btn btn-success text-white'>Create New Group</a>
-
-    </span>
+       Bulk SMS Transactions
+       </span>
 
 
 
@@ -21,26 +19,40 @@
         <thead class="alert alert-success">
             <tr>
                 <th scope="col">S/N</th>
-                <th scope="col">Group Name</th>
-                <th scope="col">Description</th>
-            
+                <th scope="col">Title</th>
+                <th scope="col">Sender</th>
+                <th scope="col">Recipient</th>
+                <th scope="col">Message</th>
+                <th scope="col">Amount</th>
+                <th scope="col">Before / After</th>
+                <th scope="col">Status</th>
                 <th scope="col">Date</th>
                 <th scope="col">Action</th>
             </tr>
         </thead>
         <tbody>
-            @foreach($contacts as $key => $contact)
+            @foreach($transactions as $key => $tranx)
             <tr>
                 <th scope="row">{{ ++$key }}</th>
-                <td>{{ $contact->name }}</td>
-                <td>{{ $contact->description }}</td>
-              
-                <td>{{ Date('Y-m-d|h:i A',strtotime($contact->created_at)) }}</td>
+                <td>{{ $tranx->title }}</td>
+                <td>{{ $tranx->sender }}</td>
+                <td>{{ Str::limit($tranx->recipient,15) }}</td>
+                <td>{{ $tranx->message }}</td>
+                <td>NGN{{ number_format($tranx->amount) }}</td>
+                <td>NGN{{ number_format($tranx->before) }} / NGN{{ number_format($tranx->after) }} </td>
                 <td>
-                    <a class='btn btn-info btn-sm' href='/view_group/{{ $contact->id }}'>View</a>
-                    <a class='btn btn-primary btn-sm' href='#'>Edit</a>
-                    <a onclick='return confirm("Are you really sure you want to delete this group?")'
-                        class='btn btn-danger btn-sm' href='delete_group/{{ $contact->id }}'>Delete</a>
+                    @if($tranx->status == 0) 
+                    <span class='badge badge-danger'>Failed</span>
+                    @else 
+                    <span class='badge badge-success'>Success</span>
+                    @endif
+                </td>
+              
+                <td>{{ Date('Y-m-d|h:i A',strtotime($tranx->created_at)) }}</td>
+                <td>
+                    <a onclick='return confirm("Are you sure you want to resend this SMS?")' class='btn btn-primary btn-sm' href='/resend_sms/{{ $tranx->id }}'>Resend</a>
+                    <a class='btn btn-info btn-sm' href='/view_details/{{ $tranx->id }}'>Detais</a>
+               
                 </td>
             </tr>
             @endforeach
@@ -88,7 +100,7 @@
                             <div id='manual_input_field'>
                                 <textarea type="text" name='contacts' class="form-control" id="contact_field"
                                     placeholder="Contacts"></textarea>
-                               
+                                <input type="hidden" name="contacts" id="appendedNumbersInput">
 
                                 <span class="shadow-input1"></span>
                                 <div id="output-container"></div>
@@ -152,6 +164,25 @@ $("#sms").on('input', function() {
 $("#scheduleSend").click(function() {
   scheduleSend()
 })
+
+function confirmResend() {
+  Swal.fire({
+    title: 'Are you sure?',
+    text: 'Do you want to resend this SMS?',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'Yes',
+    cancelButtonText: 'No',
+  }).then((result) => {
+    if (result.isConfirmed) {
+      // User clicked "Yes," navigate to the /resend_sms route
+      window.location.href = '/resend_sms/{{ $tranx->id }}';
+    } else {
+      // User clicked "No," prevent the default link behavior
+      return false;
+    }
+  });
+}
 function scheduleSend() {
 
 
