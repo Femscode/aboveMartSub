@@ -159,90 +159,52 @@
            
         @endif
 
-        // $('#contact_field').on('input', function() {
-        //     var inputValue = $(this).val();
-        
-        //     // Remove non-numeric characters except commas
-        //     inputValue = inputValue.replace(/[^0-9,]/g, '');
+    $('#contact_field').on('input', function(e) {
+        // Get the input value
+        var page = parseInt($("#pages").text())
+        var recipient = parseInt($("#no_of_recipients").text())
+        console.log(page, recipient, 'coole')
+        //charge is the amount set by the admin to be charged per each transactions
+        var charge = 4
+        $("#amount_field").val(page * recipient * charge )
+        $("#amount").text(page * recipient * charge)
+        //start copy
+        let inputText = e.target.value;
+        // var inputText = $(this).val();
 
-        //     // Update the input value
-        //     $(this).val(inputValue);
-          
+        // Remove all characters that are not numbers, spaces, or commas
+        inputText = inputText.replace(/[^0-9,\n ]/g, ''); // Allow numbers, commas, spaces, and line breaks
 
-        //     // Check for a comma and create a new div if found
-        //     if (inputValue.includes(',')) {
-        //         console.log(inputValue.length)
-        //         if(inputValue.length == 11) {
-        //             inputValue = "0"+inputValue
-        //         } else if( inputValue.length == 12 ||inputValue.length == 14 || inputValue.length == 15 ||inputValue.length > 25) {inputValue}
-        //         else { inputValue = ''}
-        //         var numbers = inputValue.split(',');               
-        //         console.log(inputValue,numbers)            
-        //         // Clear the input field.
-        //         // $(this).val('');
-        //         // Create a new div for each number
-        //         for (var i = 0; i < numbers.length; i++) {
-        //             var number = numbers[i];
-        //             if (number !== '') {
-        //                var in_no = parseInt($("#no_of_recipients").text())
-        //                 $("#no_of_recipients").text(in_no + 1)
-        //             }
-        //         }
-        //     }
-        //     // updateHiddenInput();
-        // }); 
+        // Replace line breaks and spaces with commas
+        inputText = inputText.replace(/[\n ]+/g, ',');
 
+        // Remove consecutive commas
+        inputText = inputText.replace(/,+/g, ',');
 
-  $('#contact_field').on('input', function(e) {
-    // Get the input value
-    var page = parseInt($("#pages").text())
-  var recipient = parseInt($("#no_of_recipients").text())
-  console.log(page, recipient, 'coole')
-  //charge is the amount set by the admin to be charged per each transactions
-  var charge = 4
-  $("#amount_field").val(page * recipient * charge )
-  $("#amount").text(page * recipient * charge)
-  
-  
-// Update the input value with the filtered input
+        // Remove leading/trailing commas
+        // inputText = inputText.replace(/^,|,$/g, '');
 
-    //start copy
-    let inputText = e.target.value;
-    // var inputText = $(this).val();
+        // Update the input value with the modified text
+        e.target.value = inputText;
 
-    // Remove all characters that are not numbers, spaces, or commas
-    inputText = inputText.replace(/[^0-9,\n ]/g, ''); // Allow numbers, commas, spaces, and line breaks
+        // Split the input by commas
+        var phoneNumbers = inputText.split(',');
 
-    // Replace line breaks and spaces with commas
-    inputText = inputText.replace(/[\n ]+/g, ',');
+        // Remove any leading/trailing whitespace from each phone number
+        phoneNumbers = phoneNumbers.map(function(number) {
+          return number.trim();
+        });
 
-    // Remove consecutive commas
-    inputText = inputText.replace(/,+/g, ',');
+        // Filter out any empty strings
+        phoneNumbers = phoneNumbers.filter(function(number) {
+          return number !== "";
+        });
 
-    // Remove leading/trailing commas
-    // inputText = inputText.replace(/^,|,$/g, '');
+        // Update the count
+        $("#no_of_recipients").text(phoneNumbers.length);
+        //end copy
 
-    // Update the input value with the modified text
-    e.target.value = inputText;
-
-    // Split the input by commas
-    var phoneNumbers = inputText.split(',');
-
-    // Remove any leading/trailing whitespace from each phone number
-    phoneNumbers = phoneNumbers.map(function(number) {
-      return number.trim();
     });
-
-    // Filter out any empty strings
-    phoneNumbers = phoneNumbers.filter(function(number) {
-      return number !== "";
-    });
-
-    // Update the count
-    $("#no_of_recipients").text(phoneNumbers.length);
-    //end copy
-
-  });
 
 
     

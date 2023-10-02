@@ -375,53 +375,52 @@ class BulkSMSController extends Controller
     }
 
 
-    public function sendSMS($sender_name, $contacts, $msg, $amount, $message_type)
-    {
-        //the username and the password should be loaded with .env('') before pushing;
-        $username = 'mencorp_edited';
-        $password = 'Thewebadmin247';
-        $sender = $sender_name;
-        $recipient = $contacts;
-        $message = $msg;
+    // public function sendSMS($sender_name, $contacts, $msg, $amount, $message_type)
+    // {
+    //     //the username and the password should be loaded with .env('') before pushing;
+      
+    //     $sender = $sender_name;
+    //     $recipient = $contacts;
+    //     $message = $msg;
 
-        // THE API URL with parameters
-        $apiUrl = "http://www.estoresms.com/smsapi.php?username=$username&password=$password&sender=$sender&recipient=$recipient&message=$message&dnd=true";
+    //     // THE API URL with parameters
+    //     $apiUrl = "http://www.estoresms.com/smsapi.php?username=$username&password=$password&sender=$sender&recipient=$recipient&message=$message&dnd=true";
 
-        try {
-            $response = Http::get($apiUrl);
+    //     try {
+    //         $response = Http::get($apiUrl);
 
-            $statusCode = $response->status();
-            $responseData = $response->body();
-            $responseCode = abs($response->json());
-            //try and save all the response in txt file for references.
-            file_put_contents(__DIR__ . '/smslog.txt', json_encode($responseData, JSON_PRETTY_PRINT), FILE_APPEND);
+    //         $statusCode = $response->status();
+    //         $responseData = $response->body();
+    //         $responseCode = abs($response->json());
+    //         //try and save all the response in txt file for references.
+    //         file_put_contents(__DIR__ . '/smslog.txt', json_encode($responseData, JSON_PRETTY_PRINT), FILE_APPEND);
 
-            // dd($response, $statusCode,  $responseData, $responseCode);
+    //         // dd($response, $statusCode,  $responseData, $responseCode);
 
 
-            if ($statusCode == 200 && $responseCode == 0) {
-                $title = 'Successful Bulk SMS';
-                $details = 'Bulk SMS sent to ' . $recipient . ', Amount: NGN' . $amount . '. Message: ' . $message;
-                //save the record for succesfully sent SMS
-                $this->create_transaction($title, $details, $sender, $message, $recipient, $amount, 1, $statusCode, null, $message_type);
-                return true;
-            } else {
-                $title = "Failed Bulk SMS";
-                $details = 'Failed Bulk SMS, recipient: ' . $recipient . ' Amount: NGN0.00, Message: ' . $message;
-                //save the record for non successfully sent SMS due to error from the API
-                $this->create_transaction($title, $details, $sender, $message, $recipient, 0, 0, $statusCode, null, $message_type);
-                return false;
-            }
-        } catch (\Exception $e) {
-            // Handle any exceptions or errors here
-            $title = "Failed Bulk SMS";
-            $details = 'Failed Bulk SMS, recipient: ' . $recipient . ' Amount: NGN0.00, Message: ' . $message;
-            // Save the record for non successully sent SMS due to an internal error from the application.
-            $this->create_transaction($title, $details, $sender, $message, $recipient, 0, 0, $statusCode, null, $message_type);
+    //         if ($statusCode == 200 && $responseCode == 0) {
+    //             $title = 'Successful Bulk SMS';
+    //             $details = 'Bulk SMS sent to ' . $recipient . ', Amount: NGN' . $amount . '. Message: ' . $message;
+    //             //save the record for succesfully sent SMS
+    //             $this->create_transaction($title, $details, $sender, $message, $recipient, $amount, 1, $statusCode, null, $message_type);
+    //             return true;
+    //         } else {
+    //             $title = "Failed Bulk SMS";
+    //             $details = 'Failed Bulk SMS, recipient: ' . $recipient . ' Amount: NGN0.00, Message: ' . $message;
+    //             //save the record for non successfully sent SMS due to error from the API
+    //             $this->create_transaction($title, $details, $sender, $message, $recipient, 0, 0, $statusCode, null, $message_type);
+    //             return false;
+    //         }
+    //     } catch (\Exception $e) {
+    //         // Handle any exceptions or errors here
+    //         $title = "Failed Bulk SMS";
+    //         $details = 'Failed Bulk SMS, recipient: ' . $recipient . ' Amount: NGN0.00, Message: ' . $message;
+    //         // Save the record for non successully sent SMS due to an internal error from the application.
+    //         $this->create_transaction($title, $details, $sender, $message, $recipient, 0, 0, $statusCode, null, $message_type);
 
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
-    }
+    //         return response()->json(['error' => $e->getMessage()], 500);
+    //     }
+    // }
     public function create_transaction($title, $details, $sender, $message, $recipient, $amount, $status, $statusCode, $schedule, $message_type)
     {
         $user = Auth::user();
