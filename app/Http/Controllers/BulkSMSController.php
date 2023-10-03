@@ -237,10 +237,13 @@ class BulkSMSController extends Controller
         if ($message_count == 0) {
             $message_count = 1;
         }
-
-
-
-        $real_amount = number_format(3.95 * intval($contact_count) * $message_count, 2); //3.95 should be changed to the admin specified amount.
+        $count_recipient = count(explode(',', $formatted_contacts));
+        // For the admin charge (3.95), we can create a column in the admin table and name it admin_bulksms_charge, so the charge can be called like this:
+        // $charge = User::find('admin_user_id')->admin_bulksms_charge;
+        
+        
+        $real_amount = number_format(3.95 * intval($count_recipient) * $message_count, 2); //3.95 should be changed to the admin specified amount.
+      
         // dd($real_amount,$contact_count, $rq->all());
         if ($user->balance < $real_amount) {
             $response = [
@@ -251,7 +254,7 @@ class BulkSMSController extends Controller
 
             return response()->json($response);
         }
-        $count_recipient = count(explode(',', $formatted_contacts));
+      
         // dd(count($count_recipient));
         $response = [
             'success' => true,
@@ -279,8 +282,10 @@ class BulkSMSController extends Controller
     public function sendSMS2(Request $rq)
     {
         // dd($rq->all());
-        $username = env('SMS_USERNAME');
-        $password = env('SMS_PASSWORD');
+        $username = 'mencorp';
+        $password = 'Thewebadmin247';
+        // $username = env('SMS_USERNAME');
+        // $password = env('SMS_PASSWORD');
         $sender = $rq->sender_name;
         $recipient = $rq->contacts;
         $message = $rq->message;
