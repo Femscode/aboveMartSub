@@ -3,35 +3,39 @@
 @endsection
 
 @section('content')
-<div class="container-contact1">
-    <div class="contact1-pic js-tilt" data-tilt>
-        <img src="{{ asset('bulkasset/images/img-01.png')}}" alt="IMG">
-    </div>
 
 
-    <span class="contact1-form-title">
-        {{ $contact->name }}<br>
-        {{-- <h5>{{ $contact->description }}</h5> --}}
+<div id="content" class="app-content">
+
+  <div class="col-xl-12 ui-sortable">
+    <div class="panel panel-inverse m-4 p-4" data-sortable-id="form-stuff-1">
+
+
+      <span class="contact1-form-title">
+        <h1>{{ $contact->name }}</h1>
         
+        {{-- <h5>{{ $contact->description }}</h5> --}}
+
         <a onclick='return history.back()' class='btn btn-success text-white'>Back</a>
-    </span>
-    <div class='col-md-12'>
+      </span>
+      <div class='col-md-12'>
         <span class="contact1-form-title">
-        <h5>Contact Info</h5>
+          <h5>Contact Info</h5>
         </span>
 
         <div class='alert alert-success'>{{ $contacts }}</div>
+      </div>
+
     </div>
-
-
-    <!-- Button trigger modal -->
-
+  </div>
 </div>
+
+
 
 @endsection
 @section('script')
 <script>
-    $(document).ready(function() {
+  $(document).ready(function() {
 
 $("#import_csv").click(function() {
   $("#import_field").show()

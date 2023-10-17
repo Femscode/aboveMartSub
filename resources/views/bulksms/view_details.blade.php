@@ -3,45 +3,50 @@
 @endsection
 
 @section('content')
-<div class="container-contact1">
-    <div class="contact1-pic js-tilt" data-tilt>
-        <img src="{{ asset('bulkasset/images/img-01.png')}}" alt="IMG">
-    </div>
+
+<div id="content" class="app-content">
+
+  <div class="col-xl-12 ui-sortable">
+    <div class="panel panel-inverse p-2" data-sortable-id="form-stuff-1">
 
 
-    <span class="contact1-form-title">
+      <h2 class="contact1-form-title">
         Transaction Details<br>
         {{-- <h5>: {{ $contact->description }}</h5> --}}
-        
+
         <a onclick='return history.back()' class='btn btn-success text-white'>Back</a>
-    </span>
-    <div class='col-md-12'>
+      </h2>
+      <div class='col-md-12'>
         <span class="contact1-form-title">
-        <h5>Transaction Details</h5>
+          <h5>Transaction Details</h5>
         </span>
 
         <div class='alert @if($transaction->status == 1)alert-success @else alert-danger @endif'>
-            <ul>
-                <li><b>Title</b> : {{ $transaction->title }}</li>
-                <li><b>Details</b> : {{ $transaction->description }}</li>
-                <li><b>Sender Name</b> : {{ $transaction->sender_name }}</li>
-                <li><b>Recipients</b> : {{ $transaction->recipient }}</li>
-                <li><b>Message Sent</b>  : {{ $transaction->message }}</li>
-                <li><b>Amount Charged</b> : NGN{{ number_format($transaction->amount,2) }}</li>
-                <li><b>Date Of Transaction</b> : {{ Date('Y-m-d h:i:s',strtotime($transaction->created_at)) }}</li>
-            </ul>
+          <ul>
+            <li><b>Title</b> : {{ $transaction->title }}</li>
+            <li><b>Details</b> : {{ $transaction->description }}</li>
+            <li><b>Sender Name</b> : {{ $transaction->sender_name }}</li>
+            <li><b>Recipients</b> : {{ $transaction->recipient }}</li>
+            <li><b>Message Sent</b> : {{ $transaction->message }}</li>
+            <li><b>Amount Charged</b> : NGN{{ number_format($transaction->amount,2) }}</li>
+            <li><b>Date Of Transaction</b> : {{ Date('Y-m-d h:i:s',strtotime($transaction->created_at)) }}</li>
+          </ul>
         </div>
+      </div>
+
     </div>
+  </div>
+</div>
 
 
-    <!-- Button trigger modal -->
+<!-- Button trigger modal -->
 
 </div>
 
 @endsection
 @section('script')
 <script>
-    $(document).ready(function() {
+  $(document).ready(function() {
 
 $("#import_csv").click(function() {
   $("#import_field").show()
