@@ -282,10 +282,9 @@ class BulkSMSController extends Controller
     public function sendSMS2(Request $rq)
     {
         // dd($rq->all());
-        $username = 'mencorp';
-        $password = 'Thewebadmin247';
-        // $username = env('SMS_USERNAME');
-        // $password = env('SMS_PASSWORD');
+      
+        $username = env('SMS_USERNAME');
+        $password = env('SMS_PASSWORD');
         $sender = $rq->sender_name;
         $recipient = $rq->contacts;
         $message = $rq->message;
@@ -363,10 +362,9 @@ class BulkSMSController extends Controller
     public function sendSMS($sender, $recipient, $message, $amount, $message_type)
     {
         // dd($rq->all());
-        $username = 'mencorp';
-        $password = 'Thewebadmin247';
-        // $username = env('SMS_USERNAME');
-        // $password = env('SMS_PASSWORD');
+      
+        $username = env('SMS_USERNAME');
+        $password = env('SMS_PASSWORD');
        
 
         // THE API URL with parameters
